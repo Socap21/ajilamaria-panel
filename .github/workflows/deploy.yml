@@ -1,0 +1,27 @@
+name: Deploy a Cloudflare
+
+# Se ejecuta solo de forma manual desde la pestaña "Actions" de GitHub.
+# Así nunca falla automáticamente. Cuando configures el secret
+# CLOUDFLARE_API_TOKEN, puedes cambiarlo a 'on: push' para despliegue continuo.
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Desplegar Worker
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

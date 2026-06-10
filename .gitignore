@@ -1,0 +1,29 @@
+# Dependencias
+node_modules/
+
+# Cloudflare / Wrangler
+.wrangler/
+wrangler-*.log
+.dev.vars
+.dev.vars.*
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Respaldos locales de la base de datos (no deben versionarse)
+*.sqlite
+*.sqlite3
+respaldo*.sql
+ajilamaria-respaldo-*.json
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores / IDE
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ají la María · Panel de control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --rojo:#C1271D; --rojo-dark:#8E140C; --rojo-soft:#F6DCD6;
+    --ambar:#E8920C; --ambar-soft:#FBE6C2;
+    --verde:#2F7D52; --verde-dark:#1F4D2E; --verde-soft:#DCEDE2; --hoja:#3E7A33;
+    --crema:#FBF3E7; --papel:#FFFDF8;
+    --carbon:#20160F; --carbon-2:#2E2117;
+    --tinta:#3A2A20; --tinta-soft:#7C6A60;
+    --linea:#EADFCF;
+    --sombra:0 1px 2px rgba(60,30,15,.05), 0 8px 24px rgba(120,50,20,.06);
+    --sombra-lg:0 10px 40px rgba(120,40,15,.14);
+    --r:18px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:'DM Sans',system-ui,sans-serif;
+    background:radial-gradient(1200px 600px at 100% -10%,#FCE9CF 0%,transparent 55%),radial-gradient(900px 500px at -10% 110%,#E1EBD8 0%,transparent 50%),var(--crema);
+    color:var(--tinta);-webkit-font-smoothing:antialiased;min-height:100vh}
+  h1,h2,h3,.disp{font-family:'Fraunces',serif}
+
+  /* ============ LOGIN ============ */
+  .auth{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:22px;
+    background:linear-gradient(135deg,var(--verde-dark),#163A22 55%,#0F2A18);overflow:hidden}
+  .auth.show{display:flex}
+  .auth::before{content:"";position:absolute;inset:0;opacity:.10;
+    background:radial-gradient(circle at 20% 30%,#fff 0 1px,transparent 1px) 0 0/26px 26px}
+  .deco-layer{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .deco{position:absolute;user-select:none;opacity:.4;rotate:var(--rot,0deg);
+    animation:floaty 7s ease-in-out infinite;will-change:transform}
+  .deco.fire{opacity:.6;animation:flick 1.8s ease-in-out infinite;
+    filter:drop-shadow(0 0 14px rgba(255,120,30,.7))}
+  @keyframes floaty{0%,100%{translate:0 0}50%{translate:0 -20px}}
+  @keyframes flick{0%,100%{opacity:.5;scale:1}50%{opacity:.92;scale:1.14}}
+  @media(prefers-reduced-motion:reduce){.deco{animation:none}}
+  .authcard{position:relative;background:var(--papel);border-radius:26px;width:100%;max-width:410px;
+    box-shadow:0 30px 80px rgba(0,0,0,.4);padding:38px 34px;animation:pop .4s cubic-bezier(.2,.8,.3,1) both}
+  .authcard .logo{width:64px;height:64px;border-radius:18px;margin:0 auto 16px;
+    background:linear-gradient(145deg,var(--rojo),var(--ambar));display:grid;place-items:center;font-size:33px;
+    box-shadow:0 10px 26px rgba(193,39,29,.4)}
+  .authcard h1{text-align:center;font-size:31px;font-weight:900;letter-spacing:.3px;line-height:1.1;
+    background:linear-gradient(0deg,#A8120A 0%,#E32213 22%,#FF6A00 48%,#FFB02E 72%,#FFE7A0 100%);
+    background-size:100% 260%;-webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;color:transparent;
+    animation:flames 2.8s ease-in-out infinite}
+  @keyframes flames{
+    0%,100%{background-position:50% 0%;filter:drop-shadow(0 1px 7px rgba(255,80,10,.5))}
+    50%{background-position:50% 100%;filter:drop-shadow(0 2px 18px rgba(255,150,30,.85))}}
+  .authcard .lema{position:static;background:none;padding:0;border-radius:0;display:block;
+    text-align:center;font-size:13px;font-weight:500;color:var(--tinta-soft);max-width:280px;
+    margin:9px auto 26px;line-height:1.45;font-style:italic}
+  .authcard label{display:block;font-size:12.5px;font-weight:600;color:var(--carbon);margin:0 0 6px}
+  .authcard input{width:100%;padding:12px 14px;border:1px solid var(--linea);border-radius:12px;font-family:inherit;
+    font-size:14.5px;background:#fff;color:var(--tinta);outline:none;transition:.15s;margin-bottom:14px}
+  .authcard input:focus{border-color:var(--verde);box-shadow:0 0 0 3px var(--verde-soft)}
+  .authcard .err{background:var(--rojo-soft);color:var(--rojo-dark);font-size:13px;font-weight:500;
+    padding:10px 13px;border-radius:11px;margin-bottom:14px;display:none}
+  .authcard .err.show{display:block;animation:rise .3s both}
+  .authbtn{width:100%;border:0;cursor:pointer;font-family:inherit;font-weight:700;font-size:15px;color:#fff;
+    padding:13px;border-radius:13px;background:linear-gradient(135deg,var(--rojo),var(--rojo-dark));
+    box-shadow:0 8px 20px rgba(193,39,29,.34);transition:.16s}
+  .authbtn:hover{transform:translateY(-2px)} .authbtn:disabled{opacity:.6;cursor:wait;transform:none}
+  .authnote{text-align:center;font-size:12.5px;color:var(--tinta-soft);margin-top:18px;line-height:1.5}
+
+  /* ============ APP ============ */
+  .app{display:none;min-height:100vh}
+  .app.show{display:flex}
+  .side{width:248px;flex-shrink:0;background:linear-gradient(180deg,var(--carbon),var(--carbon-2));
+    color:#F3E7DC;padding:26px 18px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+  .brand{display:flex;align-items:center;gap:12px;padding:6px 10px 20px}
+  .brand .logo{width:46px;height:46px;border-radius:14px;flex-shrink:0;background:linear-gradient(145deg,var(--rojo),var(--ambar));
+    display:grid;place-items:center;font-size:24px;box-shadow:0 6px 18px rgba(193,39,29,.45)}
+  .brand b{font-family:'Fraunces';font-weight:700;font-size:19px;line-height:1.05;display:block}
+  .brand span{font-size:11px;color:#9DB89A;letter-spacing:.03em}
+  .nav{display:flex;flex-direction:column;gap:4px}
+  .nav button{display:flex;align-items:center;gap:13px;width:100%;background:transparent;border:0;color:#D8C7BB;
+    cursor:pointer;padding:12px 14px;border-radius:13px;font-size:14.5px;font-weight:500;font-family:inherit;text-align:left;transition:.18s}
+  .nav button .ic{font-size:17px;width:20px;text-align:center}
+  .nav button:hover{background:rgba(255,255,255,.06);color:#fff}
+  .nav button.active{background:linear-gradient(135deg,var(--rojo),var(--rojo-dark));color:#fff;box-shadow:0 6px 16px rgba(142,20,12,.4)}
+  .userchip{margin-top:auto;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:11px 12px;display:flex;align-items:center;gap:10px}
+  .userchip .av{width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,var(--verde),var(--hoja));display:grid;place-items:center;font-weight:700;color:#fff;font-size:15px;flex-shrink:0}
+  .userchip .uinfo{flex:1;min-width:0}
+  .userchip .uinfo b{font-size:13px;display:block;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .userchip .uinfo span{font-size:10.5px;color:#9DB89A;text-transform:capitalize}
+  .userchip .out{background:transparent;border:0;color:#C9B4A6;cursor:pointer;font-size:17px;padding:4px;border-radius:8px;transition:.15s}
+  .userchip .out:hover{color:#fff;background:rgba(255,255,255,.08)}
+
+  .main{flex:1;padding:34px 40px 90px;max-width:1180px;margin:0 auto;width:100%}
+  .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:26px;flex-wrap:wrap}
+  .topbar h1{font-size:30px;font-weight:700;color:var(--carbon);letter-spacing:-.01em}
+  .topbar p{color:var(--tinta-soft);font-size:14px;margin-top:3px}
+  .view{display:none;animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+  .view.show{display:block}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @keyframes pop{from{opacity:0;transform:scale(.94) translateY(12px)}to{opacity:1;transform:none}}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;cursor:pointer;border:0;font-family:inherit;font-weight:600;font-size:14px;padding:11px 18px;border-radius:12px;transition:.16s}
+  .btn-primary{background:linear-gradient(135deg,var(--rojo),var(--rojo-dark));color:#fff;box-shadow:0 6px 18px rgba(193,39,29,.32)}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(193,39,29,.42)}
+  .btn-green{background:linear-gradient(135deg,var(--verde),var(--verde-dark));color:#fff;box-shadow:0 6px 18px rgba(47,125,82,.3)}
+  .btn-green:hover{transform:translateY(-2px)}
+  .btn-ghost{background:var(--papel);color:var(--tinta);border:1px solid var(--linea)}
+  .btn-ghost:hover{border-color:var(--rojo);color:var(--rojo)}
+  .btn-sm{padding:7px 12px;font-size:12.5px;border-radius:9px}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px}
+  .kpi{background:var(--papel);border:1px solid var(--linea);border-radius:var(--r);padding:20px;box-shadow:var(--sombra);position:relative;overflow:hidden}
+  .kpi::after{content:"";position:absolute;right:-26px;top:-26px;width:78px;height:78px;border-radius:50%;opacity:.12}
+  .kpi.k1::after{background:var(--rojo)} .kpi.k2::after{background:var(--ambar)} .kpi.k3::after{background:var(--verde)} .kpi.k4::after{background:#5B7FB9}
+  .kpi .lab{font-size:12.5px;color:var(--tinta-soft);font-weight:500;display:flex;align-items:center;gap:7px}
+  .kpi .val{font-family:'Fraunces';font-weight:700;font-size:27px;color:var(--carbon);margin-top:9px;letter-spacing:-.01em}
+  .kpi .sub{font-size:12px;color:var(--tinta-soft);margin-top:3px}
+
+  .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin-bottom:18px}
+  .panel{background:var(--papel);border:1px solid var(--linea);border-radius:var(--r);padding:22px;box-shadow:var(--sombra)}
+  .panel h3{font-size:17px;color:var(--carbon);font-weight:600;margin-bottom:4px}
+  .panel .ph{font-size:12.5px;color:var(--tinta-soft);margin-bottom:16px}
+  .chart-wrap{position:relative;height:240px}
+
+  .rank{display:flex;flex-direction:column;gap:11px}
+  .rank-row{display:flex;align-items:center;gap:13px}
+  .rank-row .em{width:38px;height:38px;border-radius:11px;background:var(--rojo-soft);display:grid;place-items:center;font-size:19px;flex-shrink:0}
+  .rank-row .nm{flex:1;min-width:0}
+  .rank-row .nm b{font-size:14px;display:block;color:var(--carbon);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rank-row .nm span{font-size:12px;color:var(--tinta-soft)}
+  .rank-row .qty{font-family:'Fraunces';font-weight:600;font-size:16px;color:var(--rojo)}
+
+  .alert{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:11px;background:var(--ambar-soft);border:1px solid #F0D199;margin-bottom:9px}
+  .alert.ok{background:var(--verde-soft);border-color:#BFE0CA}
+  .alert .em{font-size:18px} .alert b{font-size:13.5px;color:var(--carbon)} .alert span{font-size:12px;color:var(--tinta-soft)}
+
+  .toolbar{display:flex;gap:12px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+  .search{flex:1;min-width:200px;position:relative}
+  .search input,.sel{width:100%;padding:11px 14px 11px 40px;border:1px solid var(--linea);border-radius:12px;font-family:inherit;font-size:14px;background:var(--papel);color:var(--tinta);outline:none;transition:.15s}
+  .sel{padding-left:14px;width:auto;cursor:pointer}
+  .search input:focus,.sel:focus{border-color:var(--rojo);box-shadow:0 0 0 3px var(--rojo-soft)}
+  .search .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--tinta-soft)}
+
+  .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:16px}
+  .pcard{background:var(--papel);border:1px solid var(--linea);border-radius:var(--r);padding:18px;box-shadow:var(--sombra);transition:.18s;position:relative}
+  .pcard:hover{transform:translateY(-3px);box-shadow:var(--sombra-lg);border-color:#E2C9B0}
+  .pcard .top{display:flex;gap:13px;align-items:flex-start}
+  .pcard .em{width:50px;height:50px;border-radius:13px;background:linear-gradient(145deg,var(--rojo-soft),var(--ambar-soft));display:grid;place-items:center;font-size:25px;flex-shrink:0}
+  .pcard .ti{flex:1;min-width:0}
+  .pcard .ti b{font-family:'Fraunces';font-weight:600;font-size:16px;color:var(--carbon);display:block;line-height:1.15}
+  .pcard .cat{font-size:11.5px;color:var(--tinta-soft);margin-top:2px}
+  .pcard .price{font-family:'Fraunces';font-weight:700;font-size:21px;color:var(--rojo);margin:14px 0 2px}
+  .pcard .margin{font-size:11.5px;color:var(--verde);font-weight:600}
+  .pcard .stockbar{margin-top:13px}
+  .pcard .stockbar .row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px}
+  .pcard .stockbar .row b{color:var(--carbon)}
+  .bar{height:7px;border-radius:5px;background:var(--linea);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,var(--verde),#4DA571)}
+  .bar.low i{background:linear-gradient(90deg,var(--ambar),#F0B23E)}
+  .bar.out i{background:linear-gradient(90deg,var(--rojo),#E0544A)}
+  .pcard .acts{display:flex;gap:8px;margin-top:15px}
+  .pcard .acts .btn{flex:1;justify-content:center}
+  .tag{display:inline-block;font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:20px;background:var(--rojo-soft);color:var(--rojo-dark);position:absolute;top:16px;right:16px}
+
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--tinta-soft);font-weight:600;padding:0 14px 12px}
+  td{padding:13px 14px;border-top:1px solid var(--linea);color:var(--tinta)}
+  tbody tr:hover{background:#FFF8EE}
+  td .pname{display:flex;align-items:center;gap:10px;font-weight:600;color:var(--carbon)}
+  td .pname .e{width:30px;height:30px;border-radius:9px;background:var(--rojo-soft);display:grid;place-items:center;font-size:15px}
+  .money{font-family:'Fraunces';font-weight:600}
+  .pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+  .pill.admin{background:var(--rojo-soft);color:var(--rojo-dark)} .pill.staff{background:var(--verde-soft);color:var(--verde-dark)}
+
+  .overlay{position:fixed;inset:0;background:rgba(36,23,18,.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:60;padding:20px}
+  .overlay.show{display:flex;animation:fade .2s both}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .modal{background:var(--papel);border-radius:22px;width:100%;max-width:480px;box-shadow:var(--sombra-lg);overflow:hidden;animation:pop .28s cubic-bezier(.2,.8,.3,1) both;max-height:92vh;overflow-y:auto}
+  .modal-h{padding:22px 24px;background:linear-gradient(135deg,var(--rojo),var(--rojo-dark));color:#fff}
+  .modal-h h3{font-family:'Fraunces';font-size:20px;font-weight:600} .modal-h p{font-size:13px;opacity:.85;margin-top:2px}
+  .modal-b{padding:22px 24px}
+  .field{margin-bottom:15px}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--carbon);margin-bottom:6px}
+  .field input,.field select{width:100%;padding:11px 13px;border:1px solid var(--linea);border-radius:11px;font-family:inherit;font-size:14px;background:#fff;color:var(--tinta);outline:none;transition:.15s}
+  .field input:focus,.field select:focus{border-color:var(--rojo);box-shadow:0 0 0 3px var(--rojo-soft)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .modal-f{display:flex;gap:10px;padding:6px 24px 22px}
+  .modal-f .btn{flex:1;justify-content:center}
+  .emoji-pick{display:flex;gap:7px;flex-wrap:wrap}
+  .emoji-pick button{width:40px;height:40px;border-radius:11px;border:1px solid var(--linea);background:#fff;font-size:19px;cursor:pointer;transition:.12s}
+  .emoji-pick button.sel{border-color:var(--rojo);background:var(--rojo-soft);transform:scale(1.05)}
+  .saletotal{background:var(--rojo-soft);border-radius:13px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+  .saletotal span{font-size:13px;color:var(--rojo-dark);font-weight:600} .saletotal b{font-family:'Fraunces';font-size:24px;color:var(--rojo-dark)}
+
+  .empty{text-align:center;padding:60px 20px;color:var(--tinta-soft)} .empty .e{font-size:46px;margin-bottom:12px;opacity:.6}
+  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--carbon);color:#fff;padding:13px 22px;border-radius:13px;font-size:14px;font-weight:500;box-shadow:var(--sombra-lg);z-index:120;opacity:0;transition:.32s cubic-bezier(.2,.8,.3,1);display:flex;align-items:center;gap:9px}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  .seg{display:inline-flex;background:var(--papel);border:1px solid var(--linea);border-radius:12px;padding:4px;gap:3px}
+  .seg button{border:0;background:transparent;font-family:inherit;font-size:13px;font-weight:600;color:var(--tinta-soft);padding:7px 14px;border-radius:9px;cursor:pointer;transition:.14s}
+  .seg button.active{background:var(--rojo);color:#fff}
+
+  @media(max-width:920px){
+    .side{position:fixed;bottom:0;left:0;width:100%;height:auto;flex-direction:row;top:auto;padding:8px;z-index:50;border-top:1px solid rgba(255,255,255,.08);justify-content:space-around}
+    .brand,.userchip{display:none}
+    .nav{flex-direction:row;width:100%;justify-content:space-around;gap:2px}
+    .nav button{flex-direction:column;gap:3px;font-size:10.5px;padding:8px 4px;flex:1}
+    .nav button .ic{font-size:19px} .nav button.active{box-shadow:none}
+    .main{padding:24px 18px 100px}
+    .kpis{grid-template-columns:1fr 1fr} .grid2{grid-template-columns:1fr} .topbar h1{font-size:24px}
+  }
+  @media(max-width:480px){ .kpis{grid-template-columns:1fr} .row2{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<!-- ============ PANTALLA DE LOGIN ============ -->
+<div class="auth show" id="auth">
+  <div class="deco-layer" aria-hidden="true">
+    <span class="deco" style="top:7%;left:7%;font-size:96px;--rot:-18deg;animation-delay:.1s">🌶️</span>
+    <span class="deco fire" style="top:13%;right:11%;font-size:62px;--rot:8deg;animation-delay:.5s">🔥</span>
+    <span class="deco" style="bottom:9%;left:5%;font-size:120px;--rot:14deg;animation-delay:.9s">🌿</span>
+    <span class="deco fire" style="bottom:15%;right:7%;font-size:78px;--rot:-12deg;animation-delay:.2s">🔥</span>
+    <span class="deco" style="top:44%;left:2%;font-size:52px;--rot:22deg;animation-delay:1.7s">🌶️</span>
+    <span class="deco" style="top:52%;right:3%;font-size:66px;--rot:-24deg;animation-delay:1.1s">🍃</span>
+    <span class="deco" style="top:3%;right:32%;font-size:44px;--rot:12deg;animation-delay:2.1s">🌶️</span>
+    <span class="deco fire" style="bottom:5%;left:40%;font-size:48px;--rot:0deg;animation-delay:1.4s">🔥</span>
+  </div>
+  <div class="authcard">
+    <div class="logo">🌶️</div>
+    <h1 id="authTitle">Ají la María</h1>
+    <p class="lema">De la tierra del oriente de Caldas a tu paladar</p>
+    <div class="err" id="authErr"></div>
+    <div id="fieldNombre" style="display:none">
+      <label>Tu nombre</label><input id="auNombre" placeholder="Ej: María Rodríguez">
+    </div>
+    <label>Correo</label><input id="auEmail" type="email" placeholder="correo@ejemplo.com" autocomplete="username">
+    <label>Contraseña</label><input id="auPass" type="password" placeholder="••••••••" autocomplete="current-password">
+    <button class="authbtn" id="authBtn" onclick="submitAuth()">Entrar</button>
+    <p class="authnote" id="authNote"></p>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="app" id="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="logo">🌶️</div>
+      <div><b>Ají la María</b><span>Caldas, Colombia</span></div>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-v="dash" class="active"><span class="ic">📊</span> Resumen</button>
+      <button data-v="prod"><span class="ic">🫙</span> Productos</button>
+      <button data-v="ventas"><span class="ic">🧾</span> Ventas</button>
+      <button data-v="rep"><span class="ic">📈</span> Reportes</button>
+      <button data-v="set"><span class="ic">⚙️</span> Ajustes</button>
+    </nav>
+    <div class="userchip" id="userchip"></div>
+  </aside>
+
+  <main class="main">
+    <!-- DASHBOARD -->
+    <section class="view show" id="v-dash">
+      <div class="topbar">
+        <div><h1 id="hello">Hola 👋</h1><p id="dash-sub"></p></div>
+        <button class="btn btn-primary" onclick="openSale()"><span>＋</span> Nueva venta</button>
+      </div>
+      <div class="kpis" id="kpis"></div>
+      <div class="grid2">
+        <div class="panel"><h3>Ingresos por mes</h3><p class="ph">Ventas totales de los últimos 6 meses</p><div class="chart-wrap"><canvas id="chRev"></canvas></div></div>
+        <div class="panel"><h3>Más vendidos</h3><p class="ph">Por unidades este mes</p><div class="rank" id="topProds"></div></div>
+      </div>
+      <div class="panel"><h3>Alertas de inventario</h3><p class="ph">Productos que necesitan reabastecimiento pronto</p><div id="alerts"></div></div>
+    </section>
+
+    <!-- PRODUCTOS -->
+    <section class="view" id="v-prod">
+      <div class="topbar"><div><h1>Productos e inventario</h1><p>Administra tu catálogo, precios y stock</p></div>
+        <button class="btn btn-primary" onclick="openProduct()"><span>＋</span> Nuevo producto</button></div>
+      <div class="toolbar">
+        <div class="search"><span class="ic">🔍</span><input id="psearch" placeholder="Buscar producto…" oninput="renderProducts()"></div>
+        <select class="sel" id="pcat" onchange="renderProducts()"><option value="">Todas las categorías</option></select>
+      </div>
+      <div class="prod-grid" id="prodGrid"></div>
+    </section>
+
+    <!-- VENTAS -->
+    <section class="view" id="v-ventas">
+      <div class="topbar"><div><h1>Registro de ventas</h1><p>Cada venta descuenta el inventario automáticamente</p></div>
+        <button class="btn btn-primary" onclick="openSale()"><span>＋</span> Nueva venta</button></div>
+      <div class="toolbar"><select class="sel" id="vmonth" onchange="renderSales()"></select>
+        <span id="vmonth-sum" style="margin-left:auto;font-size:14px;color:var(--tinta-soft)"></span></div>
+      <div class="panel" style="padding:14px 8px">
+        <table><thead><tr><th>Producto</th><th>Fecha</th><th style="text-align:center">Cant.</th><th style="text-align:right">P. unit.</th><th style="text-align:right">Total</th><th></th></tr></thead>
+        <tbody id="salesBody"></tbody></table>
+        <div id="salesEmpty"></div>
+      </div>
+    </section>
+
+    <!-- REPORTES -->
+    <section class="view" id="v-rep">
+      <div class="topbar"><div><h1>Reportes</h1><p>Analiza el desempeño de tu negocio</p></div>
+        <div class="seg" id="repSeg"><button data-m="6" class="active">6 meses</button><button data-m="3">3 meses</button><button data-m="12">Año</button></div></div>
+      <div class="grid2">
+        <div class="panel"><h3>Unidades vendidas por mes</h3><p class="ph">Volumen de productos despachados</p><div class="chart-wrap"><canvas id="chUnits"></canvas></div></div>
+        <div class="panel"><h3>Ingresos por producto</h3><p class="ph">Participación en las ventas del periodo</p><div class="chart-wrap"><canvas id="chPie"></canvas></div></div>
+      </div>
+      <div class="panel"><h3>Rentabilidad por producto</h3><p class="ph">Unidades, ingresos y ganancia estimada en el periodo</p>
+        <table><thead><tr><th>Producto</th><th style="text-align:center">Uds.</th><th style="text-align:right">Ingresos</th><th style="text-align:right">Ganancia</th><th style="text-align:right">Margen</th></tr></thead>
+        <tbody id="repBody"></tbody></table></div>
+    </section>
+
+    <!-- AJUSTES -->
+    <section class="view" id="v-set">
+      <div class="topbar"><div><h1>Ajustes</h1><p>Tu cuenta, usuarios y respaldo</p></div></div>
+      <div class="grid2">
+        <div class="panel"><h3>Mi cuenta 👤</h3><div id="myAccount" style="margin-top:10px"></div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:14px" onclick="logout()">🚪 Cerrar sesión</button></div>
+        <div class="panel"><h3>Respaldo de datos 💾</h3><p class="ph">Descarga una copia de tus productos y ventas en formato JSON.</p>
+          <button class="btn btn-green btn-sm" onclick="exportData()">⬇️ Exportar respaldo</button></div>
+      </div>
+      <div class="panel" id="usersPanel" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:10px">
+          <div><h3>Usuarios</h3><p class="ph" style="margin:0">Personas con acceso al panel</p></div>
+          <button class="btn btn-primary btn-sm" onclick="openUser()"><span>＋</span> Agregar usuario</button>
+        </div>
+        <table style="margin-top:14px"><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th></th></tr></thead><tbody id="usersBody"></tbody></table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- MODAL PRODUCTO -->
+<div class="overlay" id="ovProd"><div class="modal">
+  <div class="modal-h"><h3 id="pmTitle">Nuevo producto</h3><p>Define nombre, precio, costo e inventario</p></div>
+  <div class="modal-b">
+    <input type="hidden" id="pmId">
+    <div class="field"><label>Nombre del producto</label><input id="pmName" placeholder="Ej: Ají en Polvo Tradicional 50 g"></div>
+    <div class="field"><label>Ícono</label><div class="emoji-pick" id="emojiPick"></div></div>
+    <div class="field"><label>Categoría</label><select id="pmCat">
+      <option>Ají en polvo</option><option>Hojuelas</option><option>Tarro familiar</option><option>Salsa picante</option><option>Edición especial</option><option>Combo / pack</option><option>Otro</option>
+    </select></div>
+    <div class="row2">
+      <div class="field"><label>Precio de venta (COP)</label><input id="pmPrice" type="number" min="0" placeholder="18000" oninput="calcMargin()"></div>
+      <div class="field"><label>Costo de producción (COP)</label><input id="pmCost" type="number" min="0" placeholder="7000" oninput="calcMargin()"></div>
+    </div>
+    <div id="pmMargin" style="font-size:12.5px;color:var(--verde);font-weight:600;margin:-6px 0 14px"></div>
+    <div class="row2">
+      <div class="field"><label>Stock actual (unidades)</label><input id="pmStock" type="number" min="0" placeholder="40"></div>
+      <div class="field"><label>Alerta de stock bajo</label><input id="pmMin" type="number" min="0" placeholder="10"></div>
+    </div>
+    <div class="field"><label>Nivel de picante</label><select id="pmHeat"><option value="1">🌶️ Suave</option><option value="2">🌶️🌶️ Medio</option><option value="3">🌶️🌶️🌶️ Fuerte</option></select></div>
+  </div>
+  <div class="modal-f"><button class="btn btn-ghost" onclick="closeOv('ovProd')">Cancelar</button><button class="btn btn-primary" id="pmSave" onclick="saveProduct()">Guardar producto</button></div>
+</div></div>
+
+<!-- MODAL REABASTECER -->
+<div class="overlay" id="ovStock"><div class="modal" style="max-width:400px">
+  <div class="modal-h" style="background:linear-gradient(135deg,var(--verde),var(--verde-dark))"><h3>Reabastecer inventario</h3><p id="stkName"></p></div>
+  <div class="modal-b"><input type="hidden" id="stkId"><div class="field"><label>Unidades a agregar</label><input id="stkQty" type="number" min="1" value="20"></div></div>
+  <div class="modal-f"><button class="btn btn-ghost" onclick="closeOv('ovStock')">Cancelar</button><button class="btn btn-green" id="stkSave" onclick="doRestock()">Agregar</button></div>
+</div></div>
+
+<!-- MODAL VENTA -->
+<div class="overlay" id="ovSale"><div class="modal" style="max-width:440px">
+  <div class="modal-h"><h3>Registrar venta</h3><p>Se descontará del inventario automáticamente</p></div>
+  <div class="modal-b">
+    <div class="field"><label>Producto</label><select id="saProd" onchange="calcSale()"></select></div>
+    <div class="field"><label>Cantidad</label><input id="saQty" type="number" min="1" value="1" oninput="calcSale()"></div>
+    <div id="saStock" style="font-size:12.5px;color:var(--tinta-soft);margin:-6px 0 14px"></div>
+    <div class="saletotal"><span>Total de la venta</span><b id="saTotal">$0</b></div>
+  </div>
+  <div class="modal-f"><button class="btn btn-ghost" onclick="closeOv('ovSale')">Cancelar</button><button class="btn btn-primary" id="saSave" onclick="saveSale()">Confirmar venta</button></div>
+</div></div>
+
+<!-- MODAL USUARIO -->
+<div class="overlay" id="ovUser"><div class="modal" style="max-width:420px">
+  <div class="modal-h"><h3>Agregar usuario</h3><p>Tendrá acceso con su correo y contraseña</p></div>
+  <div class="modal-b">
+    <div class="field"><label>Nombre</label><input id="uNombre" placeholder="Nombre completo"></div>
+    <div class="field"><label>Correo</label><input id="uEmail" type="email" placeholder="correo@ejemplo.com"></div>
+    <div class="field"><label>Contraseña (mínimo 6)</label><input id="uPass" type="password" placeholder="••••••••"></div>
+    <div class="field"><label>Rol</label><select id="uRole"><option value="staff">Staff (ventas e inventario)</option><option value="admin">Administrador (todo + usuarios)</option></select></div>
+  </div>
+  <div class="modal-f"><button class="btn btn-ghost" onclick="closeOv('ovUser')">Cancelar</button><button class="btn btn-primary" id="uSave" onclick="saveUser()">Crear usuario</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ API ============ */
+async function api(path, method='GET', body){
+  const opt={method, headers:{}, credentials:'include'};
+  if(body){opt.headers['Content-Type']='application/json'; opt.body=JSON.stringify(body);}
+  const r=await fetch(path,opt);
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok){ if(r.status===401){showAuth('login');} throw new Error(data.error||'Error'); }
+  return data;
+}
+
+/* ============ ESTADO ============ */
+let DB={products:[],sales:[]}, currentUser=null, currentView='dash', authMode='login';
+
+/* ============ HELPERS ============ */
+const COP=new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0});
+const fmt=n=>COP.format(Math.round(n||0));
+const MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const MESL=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const ymKey=d=>{d=new Date(d);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
+const ymLabel=k=>{const[y,m]=k.split('-');return MES[+m-1]+' '+y.slice(2)};
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2400)}
+const EMOJIS=['🌶️','🫙','🔥','🥭','🌿','🫑','🥗','🧄','🍅','🎁','🌽','🍋'];
+
+/* ============ AUTENTICACIÓN ============ */
+function showAuth(mode){
+  authMode=mode;
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('auth').classList.add('show');
+  const reg=mode==='register';
+  document.getElementById('fieldNombre').style.display=reg?'block':'none';
+  document.getElementById('authTitle').textContent=reg?'Crea tu cuenta':'Ají la María';
+  document.getElementById('authBtn').textContent=reg?'Crear cuenta de administrador':'Entrar';
+  document.getElementById('authNote').textContent=reg?'Esta será la cuenta principal (administrador) del negocio.':'';
+  document.getElementById('auPass').setAttribute('autocomplete',reg?'new-password':'current-password');
+  hideErr();
+}
+function showApp(){
+  document.getElementById('auth').classList.remove('show');
+  document.getElementById('app').classList.add('show');
+}
+function authErr(msg){const e=document.getElementById('authErr');e.textContent=msg;e.classList.add('show')}
+function hideErr(){document.getElementById('authErr').classList.remove('show')}
+
+async function submitAuth(){
+  const btn=document.getElementById('authBtn'); hideErr();
+  const email=document.getElementById('auEmail').value.trim();
+  const password=document.getElementById('auPass').value;
+  if(!email||!password){authErr('Completa correo y contraseña');return}
+  btn.disabled=true;
+  try{
+    if(authMode==='register'){
+      const nombre=document.getElementById('auNombre').value.trim();
+      if(!nombre){authErr('Escribe tu nombre');btn.disabled=false;return}
+      await api('/api/auth/register','POST',{nombre,email,password});
+    }else{
+      await api('/api/auth/login','POST',{email,password});
+    }
+    await boot();
+  }catch(e){authErr(e.message)}finally{btn.disabled=false}
+}
+async function logout(){ try{await api('/api/auth/logout','POST')}catch(e){} currentUser=null; document.getElementById('auPass').value=''; showAuth('login'); }
+document.getElementById('auPass').addEventListener('keydown',e=>{if(e.key==='Enter')submitAuth()});
+
+/* ============ CARGA DE DATOS ============ */
+async function loadData(){
+  const d=await api('/api/data');
+  DB.products=d.products; DB.sales=d.sales; currentUser=d.user;
+}
+function updateUserUI(){
+  if(!currentUser)return;
+  const ini=(currentUser.nombre||'?').trim()[0].toUpperCase();
+  document.getElementById('userchip').innerHTML=`
+    <div class="av">${ini}</div>
+    <div class="uinfo"><b>${currentUser.nombre}</b><span>${currentUser.role==='admin'?'Administrador':'Staff'}</span></div>
+    <button class="out" title="Cerrar sesión" onclick="logout()">⏻</button>`;
+  document.getElementById('hello').textContent='Hola, '+currentUser.nombre.split(' ')[0]+' 👋';
+  document.getElementById('usersPanel').style.display=currentUser.role==='admin'?'block':'none';
+}
+
+/* ============ NAV ============ */
+const renderers={dash:renderDash,prod:renderProducts,ventas:renderSales,rep:renderReport,set:renderSettings};
+document.getElementById('nav').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  currentView=b.dataset.v;
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
+  document.getElementById('v-'+currentView).classList.add('show');
+  renderers[currentView]();
+});
+function renderCurrent(){renderers[currentView]()}
+
+/* ============ DASHBOARD ============ */
+let chRev,chUnits,chPie;
+function monthlyRevenue(months){
+  const out=[]; const now=new Date();
+  for(let m=months-1;m>=0;m--){const d=new Date(now.getFullYear(),now.getMonth()-m,1);out.push({key:ymKey(d),label:ymLabel(ymKey(d)),rev:0,units:0})}
+  const idx={}; out.forEach((o,i)=>idx[o.key]=i);
+  DB.sales.forEach(s=>{const k=ymKey(s.fecha);if(k in idx){out[idx[k]].rev+=s.total;out[idx[k]].units+=s.qty}});
+  return out;
+}
+function renderDash(){
+  const thisM=ymKey(new Date());
+  const salesM=DB.sales.filter(s=>ymKey(s.fecha)===thisM);
+  const revM=salesM.reduce((a,s)=>a+s.total,0), unitsM=salesM.reduce((a,s)=>a+s.qty,0);
+  const invVal=DB.products.reduce((a,p)=>a+p.precio*p.stock,0);
+  const low=DB.products.filter(p=>p.stock<=p.min);
+  document.getElementById('dash-sub').textContent=MESL[new Date().getMonth()].replace(/^./,c=>c.toUpperCase())+' '+new Date().getFullYear();
+  document.getElementById('kpis').innerHTML=`
+    <div class="kpi k1"><div class="lab">💰 Ingresos del mes</div><div class="val">${fmt(revM)}</div><div class="sub">${salesM.length} ventas registradas</div></div>
+    <div class="kpi k2"><div class="lab">📦 Unidades vendidas</div><div class="val">${unitsM}</div><div class="sub">este mes</div></div>
+    <div class="kpi k3"><div class="lab">🏷️ Valor del inventario</div><div class="val">${fmt(invVal)}</div><div class="sub">${DB.products.length} productos</div></div>
+    <div class="kpi k4"><div class="lab">⚠️ Stock bajo</div><div class="val">${low.length}</div><div class="sub">${low.length?'requieren atención':'todo en orden'}</div></div>`;
+  const data=monthlyRevenue(6);
+  if(chRev)chRev.destroy();
+  chRev=new Chart(document.getElementById('chRev'),{type:'bar',data:{labels:data.map(d=>d.label),datasets:[{data:data.map(d=>d.rev),backgroundColor:'#C1271D',borderRadius:8,maxBarThickness:42}]},options:barOpts(v=>fmt(v))});
+  const byProd={}; salesM.forEach(s=>{byProd[s.pid]=byProd[s.pid]||{qty:0,nombre:s.nombre,em:s.em,rev:0};byProd[s.pid].qty+=s.qty;byProd[s.pid].rev+=s.total});
+  const top=Object.values(byProd).sort((a,b)=>b.qty-a.qty).slice(0,5);
+  document.getElementById('topProds').innerHTML=top.length?top.map(t=>`<div class="rank-row"><div class="em">${t.em||'🌶️'}</div><div class="nm"><b>${t.nombre}</b><span>${fmt(t.rev)}</span></div><div class="qty">${t.qty}×</div></div>`).join(''):'<p style="color:var(--tinta-soft);font-size:13px">Aún no hay ventas este mes.</p>';
+  const al=document.getElementById('alerts');
+  al.innerHTML=low.length?low.sort((a,b)=>a.stock-b.stock).map(p=>`<div class="alert"><span class="em">${p.stock===0?'🚨':'⚠️'}</span><div style="flex:1"><b>${p.nombre}</b><br><span>Quedan ${p.stock} unidades (alerta: ${p.min})</span></div><button class="btn btn-primary btn-sm" onclick="openStock('${p.id}')">Reabastecer</button></div>`).join(''):'<div class="alert ok"><span class="em">✅</span><div><b>Inventario saludable</b><br><span>Ningún producto está por debajo de su nivel mínimo.</span></div></div>';
+}
+function barOpts(fmtY){return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtY(c.parsed.y)}}},scales:{x:{grid:{display:false},ticks:{color:'#7C6A60',font:{family:'DM Sans'}}},y:{grid:{color:'#EADFCF'},ticks:{color:'#7C6A60',font:{family:'DM Sans'},callback:fmtY}}}}}
+
+/* ============ PRODUCTOS ============ */
+function renderProducts(){
+  const q=(document.getElementById('psearch').value||'').toLowerCase();
+  const cat=document.getElementById('pcat').value;
+  const cats=[...new Set(DB.products.map(p=>p.cat).filter(Boolean))];
+  const sel=document.getElementById('pcat');
+  if(sel.options.length-1!==cats.length){sel.innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option>${c}</option>`).join('');sel.value=cat}
+  const list=DB.products.filter(p=>(!q||p.nombre.toLowerCase().includes(q))&&(!cat||p.cat===cat));
+  const g=document.getElementById('prodGrid');
+  if(!list.length){g.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="e">🫙</div>No hay productos. Crea el primero con “Nuevo producto”.</div>';return}
+  g.innerHTML=list.map(p=>{
+    const margin=p.precio>0?Math.round((p.precio-p.costo)/p.precio*100):0;
+    const pct=p.min>0?Math.min(100,Math.round(p.stock/(p.min*2.5)*100)):100;
+    const cls=p.stock===0?'out':(p.stock<=p.min?'low':'');
+    return `<div class="pcard"><span class="tag">${'🌶️'.repeat(p.heat||1)}</span>
+      <div class="top"><div class="em">${p.em||'🌶️'}</div><div class="ti"><b>${p.nombre}</b><div class="cat">${p.cat||''}</div></div></div>
+      <div class="price">${fmt(p.precio)}</div><div class="margin">Margen ${margin}% · costo ${fmt(p.costo)}</div>
+      <div class="stockbar"><div class="row"><span>Inventario</span><b>${p.stock} und.</b></div><div class="bar ${cls}"><i style="width:${pct}%"></i></div></div>
+      <div class="acts"><button class="btn btn-ghost btn-sm" onclick="openProduct('${p.id}')">✏️ Editar</button><button class="btn btn-ghost btn-sm" onclick="openStock('${p.id}')">➕ Stock</button></div></div>`;
+  }).join('');
+}
+let pickedEmoji='🌶️';
+function openProduct(id){
+  document.getElementById('emojiPick').innerHTML=EMOJIS.map(e=>`<button onclick="pickEmoji('${e}',this)">${e}</button>`).join('');
+  if(id){const p=DB.products.find(x=>x.id===id);
+    document.getElementById('pmTitle').textContent='Editar producto';
+    document.getElementById('pmId').value=p.id;document.getElementById('pmName').value=p.nombre;document.getElementById('pmCat').value=p.cat||'Ají en polvo';
+    document.getElementById('pmPrice').value=p.precio;document.getElementById('pmCost').value=p.costo;document.getElementById('pmStock').value=p.stock;document.getElementById('pmMin').value=p.min;document.getElementById('pmHeat').value=p.heat||2;pickedEmoji=p.em||'🌶️';
+  }else{document.getElementById('pmTitle').textContent='Nuevo producto';['pmId','pmName','pmPrice','pmCost','pmStock','pmMin'].forEach(i=>document.getElementById(i).value='');document.getElementById('pmCat').value='Ají en polvo';document.getElementById('pmHeat').value='2';pickedEmoji='🌶️'}
+  [...document.getElementById('emojiPick').children].forEach(b=>b.classList.toggle('sel',b.textContent===pickedEmoji));
+  calcMargin();openOv('ovProd');
+}
+function pickEmoji(e,btn){pickedEmoji=e;[...btn.parentNode.children].forEach(b=>b.classList.remove('sel'));btn.classList.add('sel')}
+function calcMargin(){const pr=+document.getElementById('pmPrice').value||0,co=+document.getElementById('pmCost').value||0;const el=document.getElementById('pmMargin');el.textContent=(pr>0)?`Ganancia por unidad: ${fmt(pr-co)} · margen ${Math.round((pr-co)/pr*100)}%`:''}
+async function saveProduct(){
+  const name=document.getElementById('pmName').value.trim(); if(!name){toast('Escribe un nombre');return}
+  const obj={nombre:name,cat:document.getElementById('pmCat').value,precio:+document.getElementById('pmPrice').value||0,costo:+document.getElementById('pmCost').value||0,stock:+document.getElementById('pmStock').value||0,min:+document.getElementById('pmMin').value||0,heat:+document.getElementById('pmHeat').value,em:pickedEmoji};
+  const id=document.getElementById('pmId').value; const btn=document.getElementById('pmSave'); btn.disabled=true;
+  try{ if(id){await api('/api/products/'+id,'PUT',obj);toast('Producto actualizado ✓')}else{await api('/api/products','POST',obj);toast('Producto creado ✓')} await loadData(); closeOv('ovProd'); renderCurrent(); }
+  catch(e){toast(e.message)}finally{btn.disabled=false}
+}
+function openStock(id){const p=DB.products.find(x=>x.id===id);document.getElementById('stkId').value=id;document.getElementById('stkName').textContent=p.nombre+' · '+p.stock+' und.';document.getElementById('stkQty').value=20;openOv('ovStock')}
+async function doRestock(){const id=document.getElementById('stkId').value,q=+document.getElementById('stkQty').value||0;const btn=document.getElementById('stkSave');btn.disabled=true;
+  try{await api('/api/products/'+id+'/restock','POST',{qty:q});await loadData();closeOv('ovStock');toast(`+${q} unidades agregadas`);renderCurrent()}catch(e){toast(e.message)}finally{btn.disabled=false}}
+
+/* ============ VENTAS ============ */
+function fillMonths(){
+  const sel=document.getElementById('vmonth');const prev=sel.value;
+  const keys=[...new Set(DB.sales.map(s=>ymKey(s.fecha)))].sort().reverse();
+  const cur=ymKey(new Date()); if(!keys.includes(cur))keys.unshift(cur);
+  sel.innerHTML=keys.map(k=>{const[y,m]=k.split('-');return `<option value="${k}">${MESL[+m-1]} ${y}</option>`}).join('');
+  if(prev&&keys.includes(prev))sel.value=prev;
+}
+function renderSales(){
+  fillMonths();
+  const mk=document.getElementById('vmonth').value;
+  const list=DB.sales.filter(s=>ymKey(s.fecha)===mk).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  const body=document.getElementById('salesBody'),empty=document.getElementById('salesEmpty');
+  const total=list.reduce((a,s)=>a+s.total,0),units=list.reduce((a,s)=>a+s.qty,0);
+  document.getElementById('vmonth-sum').innerHTML=`<b style="color:var(--rojo);font-family:Fraunces">${fmt(total)}</b> · ${units} und. · ${list.length} ventas`;
+  if(!list.length){body.innerHTML='';empty.innerHTML='<div class="empty"><div class="e">🧾</div>Sin ventas en este mes.</div>';return}
+  empty.innerHTML='';
+  body.innerHTML=list.map(s=>{const d=new Date(s.fecha);return `<tr><td><div class="pname"><span class="e">${s.em||'🌶️'}</span>${s.nombre}</div></td><td>${d.getDate()} ${MES[d.getMonth()]} · ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</td><td style="text-align:center">${s.qty}</td><td style="text-align:right">${fmt(s.precio)}</td><td style="text-align:right" class="money">${fmt(s.total)}</td><td style="text-align:right"><button class="btn btn-ghost btn-sm" onclick="delSale('${s.id}')">🗑️</button></td></tr>`}).join('');
+}
+async function delSale(id){ if(!confirm('¿Eliminar esta venta? El stock se devolverá al inventario.'))return;
+  try{await api('/api/sales/'+id,'DELETE');await loadData();toast('Venta eliminada · stock devuelto');renderCurrent()}catch(e){toast(e.message)}}
+function openSale(){
+  const sel=document.getElementById('saProd');const avail=DB.products.filter(p=>p.activo);
+  if(!avail.length){toast('Primero crea un producto');return}
+  sel.innerHTML=avail.map(p=>`<option value="${p.id}">${p.em||'🌶️'}  ${p.nombre} — ${fmt(p.precio)} (stock ${p.stock})</option>`).join('');
+  document.getElementById('saQty').value=1;calcSale();openOv('ovSale');
+}
+function calcSale(){const p=DB.products.find(x=>x.id===document.getElementById('saProd').value);const q=+document.getElementById('saQty').value||0;document.getElementById('saTotal').textContent=fmt((p?p.precio:0)*q);const st=document.getElementById('saStock');if(p){st.innerHTML=(q>p.stock)?`<span style="color:var(--rojo)">⚠️ Solo hay ${p.stock} en stock</span>`:`Quedarán ${p.stock-q} unidades en inventario`}}
+async function saveSale(){
+  const pid=document.getElementById('saProd').value,q=+document.getElementById('saQty').value||0;const btn=document.getElementById('saSave');btn.disabled=true;
+  try{const r=await api('/api/sales','POST',{pid,qty:q});await loadData();closeOv('ovSale');toast(`Venta registrada · ${fmt(r.total)} 🎉`);renderCurrent()}catch(e){toast(e.message)}finally{btn.disabled=false}
+}
+
+/* ============ REPORTES ============ */
+let repMonths=6;
+document.getElementById('repSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;document.querySelectorAll('#repSeg button').forEach(x=>x.classList.remove('active'));b.classList.add('active');repMonths=+b.dataset.m;renderReport()});
+function renderReport(){
+  const data=monthlyRevenue(repMonths);
+  if(chUnits)chUnits.destroy();
+  chUnits=new Chart(document.getElementById('chUnits'),{type:'line',data:{labels:data.map(d=>d.label),datasets:[{data:data.map(d=>d.units),borderColor:'#E8920C',backgroundColor:'rgba(232,146,12,.12)',fill:true,tension:.35,borderWidth:3,pointRadius:4,pointBackgroundColor:'#E8920C'}]},options:barOpts(v=>v+' und.')});
+  const cutoff=new Date();cutoff.setMonth(cutoff.getMonth()-repMonths+1);cutoff.setDate(1);cutoff.setHours(0,0,0,0);
+  const inP=DB.sales.filter(s=>new Date(s.fecha)>=cutoff);const agg={};
+  inP.forEach(s=>{const p=DB.products.find(x=>x.id===s.pid);agg[s.pid]=agg[s.pid]||{nombre:s.nombre,em:s.em,qty:0,rev:0,cost:0};agg[s.pid].qty+=s.qty;agg[s.pid].rev+=s.total;agg[s.pid].cost+=(p?p.costo:0)*s.qty});
+  const rows=Object.values(agg).sort((a,b)=>b.rev-a.rev);
+  if(chPie)chPie.destroy();
+  const palette=['#C1271D','#E8920C','#2F7D52','#5B7FB9','#A0522D','#D4607A','#8E6FB6','#3E7A33'];
+  chPie=new Chart(document.getElementById('chPie'),{type:'doughnut',data:{labels:rows.map(r=>r.nombre),datasets:[{data:rows.map(r=>r.rev),backgroundColor:palette,borderWidth:2,borderColor:'#FFFDF8'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:11,font:{family:'DM Sans',size:11},color:'#3A2A20',padding:9}},tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.parsed)}}}}});
+  const body=document.getElementById('repBody');
+  if(!rows.length){body.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--tinta-soft);padding:30px">Sin ventas en el periodo.</td></tr>';return}
+  body.innerHTML=rows.map(r=>{const gain=r.rev-r.cost,mg=r.rev>0?Math.round(gain/r.rev*100):0;return `<tr><td><div class="pname"><span class="e">${r.em||'🌶️'}</span>${r.nombre}</div></td><td style="text-align:center">${r.qty}</td><td style="text-align:right" class="money">${fmt(r.rev)}</td><td style="text-align:right;color:var(--verde)" class="money">${fmt(gain)}</td><td style="text-align:right;font-weight:600">${mg}%</td></tr>`}).join('');
+}
+
+/* ============ AJUSTES / USUARIOS ============ */
+function renderSettings(){
+  document.getElementById('myAccount').innerHTML=`<div style="font-size:14px;line-height:1.9"><b>${currentUser.nombre}</b><br><span style="color:var(--tinta-soft)">${currentUser.email}</span><br><span class="pill ${currentUser.role}">${currentUser.role==='admin'?'Administrador':'Staff'}</span></div>`;
+  if(currentUser.role==='admin'){document.getElementById('usersPanel').style.display='block';loadUsers()}
+}
+async function loadUsers(){
+  try{const d=await api('/api/users');
+    document.getElementById('usersBody').innerHTML=d.users.map(u=>`<tr><td style="font-weight:600;color:var(--carbon)">${u.nombre}</td><td>${u.email}</td><td><span class="pill ${u.role}">${u.role==='admin'?'Admin':'Staff'}</span></td><td style="text-align:right">${u.id===currentUser.id?'<span style="color:var(--tinta-soft);font-size:12px">tú</span>':`<button class="btn btn-ghost btn-sm" onclick="delUser('${u.id}')">🗑️</button>`}</td></tr>`).join('');
+  }catch(e){toast(e.message)}
+}
+function openUser(){['uNombre','uEmail','uPass'].forEach(i=>document.getElementById(i).value='');document.getElementById('uRole').value='staff';openOv('ovUser')}
+async function saveUser(){
+  const nombre=document.getElementById('uNombre').value.trim(),email=document.getElementById('uEmail').value.trim(),password=document.getElementById('uPass').value,role=document.getElementById('uRole').value;
+  if(!nombre||!email||password.length<6){toast('Completa los datos (contraseña mín. 6)');return}
+  const btn=document.getElementById('uSave');btn.disabled=true;
+  try{await api('/api/auth/register','POST',{nombre,email,password,role});closeOv('ovUser');toast('Usuario creado ✓');loadUsers()}catch(e){toast(e.message)}finally{btn.disabled=false}
+}
+async function delUser(id){ if(!confirm('¿Eliminar este usuario? Perderá el acceso.'))return; try{await api('/api/users/'+id,'DELETE');toast('Usuario eliminado');loadUsers()}catch(e){toast(e.message)}}
+
+function exportData(){const blob=new Blob([JSON.stringify({products:DB.products,sales:DB.sales},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ajilamaria-respaldo-'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('Respaldo descargado ✓')}
+
+/* ============ OVERLAYS ============ */
+function openOv(id){document.getElementById(id).classList.add('show')}
+function closeOv(id){document.getElementById(id).classList.remove('show')}
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show')}));
+
+/* ============ ARRANQUE ============ */
+async function boot(){ await loadData(); updateUserUI(); showApp(); renderDash(); }
+(async function init(){
+  try{ await api('/api/me'); await boot(); }
+  catch(e){
+    try{const s=await api('/api/setup'); showAuth(s.needsSetup?'register':'login');}
+    catch(_){ showAuth('login'); }
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "name": "ajilamaria-panel",
+  "version": "1.0.0",
+  "description": "Panel de control full-stack para Ají la María: inventario, ventas y reportes, desplegado sobre Cloudflare Workers + D1.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --remote",
+    "deploy": "wrangler deploy",
+    "db:schema": "wrangler d1 execute ajilamaria --remote --file=./schema.sql",
+    "db:seed": "wrangler d1 execute ajilamaria --remote --file=./seed.sql",
+    "db:backup": "wrangler d1 export ajilamaria --remote --output=respaldo.sql"
+  },
+  "keywords": [
+    "cloudflare-workers",
+    "cloudflare-d1",
+    "serverless",
+    "inventory-management",
+    "javascript",
+    "spa"
+  ],
+  "author": "Oscar Patiño",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
